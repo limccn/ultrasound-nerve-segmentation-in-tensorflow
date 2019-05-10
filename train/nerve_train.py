@@ -39,22 +39,36 @@ def train():
     # train hopefuly 
     train_op = nerve_net.train(error, FLAGS.learning_rate)
     # List of all Variables
-    variables = tf.all_variables()
+    variables = tf.global_variables()
 
     # Build a saver
-    saver = tf.train.Saver(tf.all_variables())   
+    saver = tf.train.Saver(tf.global_variables())   
     #for i, variable in enumerate(variables):
     #  print '----------------------------------------------'
     #  print variable.name[:variable.name.index(':')]
 
     # Summary op
-    summary_op = tf.merge_all_summaries()
+    summary_op = tf.summary.merge_all()
+    
  
     # Build an initialization operation to run below.
-    init = tf.initialize_all_variables()
+    init = tf.global_variables_initializer()
+    
+    #cpu
+    #sess_config=tf.ConfigProto(
+    #    device_count={"CPU":1},
+    #    inter_op_parallelism_threads=1,
+    #    intra_op_parallelism_threads=1,
+    #)
+
+    #gpu
+    sess_config = tf.ConfigProto(allow_soft_placement=True)
+    sess_config.gpu_options.allow_growth=True
+    #sess_config.gpu_options.per_process_gpu_memory_fraction=0.8
 
     # Start running operations on the Graph.
-    sess = tf.Session()
+    #sess = tf.Session()
+    sess=tf.Session(config=sess_config) 
 
     # init if this is the very time training
     print("init network from scratch")
@@ -64,23 +78,24 @@ def train():
     tf.train.start_queue_runners(sess=sess)
 
     # Summary op
-    graph_def = sess.graph.as_graph_def(add_shapes=True)
-    summary_writer = tf.train.SummaryWriter(TRAIN_DIR, graph_def=graph_def)
+    #graph_def = sess.graph.as_graph_def(add_shapes=True)
+    graph_def = sess.graph_def
+    summary_writer = tf.summary.FileWriter(TRAIN_DIR, sess.graph)
 
-    for step in xrange(FLAGS.max_steps):
+    for step in range(FLAGS.max_steps):
       t = time.time()
       _ , loss_value = sess.run([train_op, error],feed_dict={})
       elapsed = time.time() - t
 
       assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
-      if step%100 == 0:
+      if step%50 == 0:
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step) 
         print("loss value at " + str(loss_value))
         print("time per batch is " + str(elapsed))
 
-      if step%1000 == 0:
+      if step%500 == 0:
         checkpoint_path = os.path.join(TRAIN_DIR, 'model.ckpt')
         saver.save(sess, checkpoint_path, global_step=step)  
         print("saved to " + TRAIN_DIR)

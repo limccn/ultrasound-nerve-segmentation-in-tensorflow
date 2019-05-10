@@ -14,7 +14,7 @@ def int_shape(x):
 def concat_elu(x):
     """ like concatenated ReLU (http://arxiv.org/abs/1603.05201), but then with ELU """
     axis = len(x.get_shape())-1
-    return tf.nn.elu(tf.concat(axis, [x, -x]))
+    return tf.nn.elu(tf.concat([x, -x],axis))
 
 def set_nonlinearity(name):
   if name == 'concat_elu':
@@ -74,7 +74,7 @@ def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonline
     weights = _variable('weights', shape=[kernel_size,kernel_size,num_features,input_channels],initializer=tf.contrib.layers.xavier_initializer_conv2d())
     biases = _variable('biases',[num_features],initializer=tf.contrib.layers.xavier_initializer_conv2d())
     batch_size = tf.shape(inputs)[0]
-    output_shape = tf.pack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, num_features]) 
+    output_shape = tf.stack([tf.shape(inputs)[0], tf.shape(inputs)[1]*stride, tf.shape(inputs)[2]*stride, int(num_features)]) 
     conv = tf.nn.conv2d_transpose(inputs, weights, output_shape, strides=[1,stride,stride,1], padding='SAME')
     conv_biased = tf.nn.bias_add(conv, biases)
     if nonlinearity is not None:
@@ -82,7 +82,7 @@ def transpose_conv_layer(inputs, kernel_size, stride, num_features, idx, nonline
 
     #reshape
     shape = int_shape(inputs)
-    conv_biased = tf.reshape(conv_biased, [shape[0], shape[1]*stride, shape[2]*stride, num_features])
+    conv_biased = tf.reshape(conv_biased, [shape[0], shape[1]*stride, shape[2]*stride, int(num_features)])
 
     return conv_biased
 
@@ -108,22 +108,24 @@ def nin(x, num_units, idx):
     s = int_shape(x)
     x = tf.reshape(x, [np.prod(s[:-1]),s[-1]])
     x = fc_layer(x, num_units, idx)
-    return tf.reshape(x, s[:-1]+[num_units])
+    return tf.reshape(x, s[:-1]+[int(num_units)])
 
 def _phase_shift(I, r):
   bsize, a, b, c = I.get_shape().as_list()
   bsize = tf.shape(I)[0] # Handling Dimension(None) type for undefined batch dim
   X = tf.reshape(I, (bsize, a, b, r, r))
   X = tf.transpose(X, (0, 1, 2, 4, 3))  # bsize, a, b, 1, 1
-  X = tf.split(1, a, X)  # a, [bsize, b, r, r]
-  X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, b, a*r, r
-  X = tf.split(1, b, X)  # b, [bsize, a*r, r]
-  X = tf.concat(2, [tf.squeeze(x) for x in X])  # bsize, a*r, b*r
+  X = tf.split(X, a, 1)  # a, [bsize, b, r, r]
+  X = tf.concat([tf.squeeze(x) for x in X],2)  # bsize, b, a*r, r
+  X = tf.split(X, b, 1)  # b, [bsize, a*r, r]
+  X = tf.concat([tf.squeeze(x) for x in X],2)  # bsize, a*r, b*r
+
   return tf.reshape(X, (bsize, a*r, b*r, 1))
 
 def PS(X, r, depth):
-  Xc = tf.split(3, depth, X)
-  X = tf.concat(3, [_phase_shift(x, r) for x in Xc])
+  Xc = tf.split(X, depth, 3)
+  X = tf.concat([_phase_shift(x, r) for x in Xc],3)
+
   return X
 
 def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet"):
@@ -144,7 +146,7 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
     x_2 = conv_layer(x_1, 3, 1, filter_size, name + '_conv_2')
   else:
     x_2 = conv_layer(x_1, 3, 1, filter_size*2, name + '_conv_2')
-    x_2_1, x_2_2 = tf.split(3,2,x_2)
+    x_2_1, x_2_2 = tf.split(x_2,2,3)
     x_2 = x_2_1 * tf.nn.sigmoid(x_2_2)
 
   if int(orig_x.get_shape()[2]) > int(x_2.get_shape()[2]):
@@ -174,38 +176,38 @@ def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_e
   # res_1
   x = inputs
   print(nr_res_blocks)
-  for i in xrange(nr_res_blocks):
+  for i in range(nr_res_blocks):
     x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_1_" + str(i))
   # res_2
   a.append(x)
   filter_size = 2 * filter_size
   x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, name="resnet_2_downsample")
-  for i in xrange(nr_res_blocks):
+  for i in range(nr_res_blocks):
     x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_2_" + str(i))
   # res_3
   a.append(x)
   filter_size = 2 * filter_size
   x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, name="resnet_3_downsample")
-  for i in xrange(nr_res_blocks):
+  for i in range(nr_res_blocks):
     x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_3_" + str(i))
   # res_4
   a.append(x)
   filter_size = 2 * filter_size
   x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, name="resnet_4_downsample")
-  for i in xrange(nr_res_blocks):
+  for i in range(nr_res_blocks):
     x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_4_" + str(i))
   # res_4
   a.append(x)
   filter_size = 2 * filter_size
   x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, name="resnet_5_downsample")
-  for i in xrange(nr_res_blocks):
+  for i in range(nr_res_blocks):
     x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_5_" + str(i))
   # res_up_1
   filter_size = filter_size /2
   print(x.get_shape())
   x = transpose_conv_layer(x, 3, 2, filter_size, "up_conv_1")
   #x = PS(x,2,512)
-  for i in xrange(nr_res_blocks):
+  for i in range(nr_res_blocks):
     if i == 0:
       x = res_block(x, a=a[-1], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_1_" + str(i))
     else:
@@ -215,7 +217,7 @@ def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_e
   print(x.get_shape())
   x = transpose_conv_layer(x, 3, 2, filter_size, "up_conv_2")
   #x = PS(x,2,512)
-  for i in xrange(nr_res_blocks):
+  for i in range(nr_res_blocks):
     if i == 0:
       x = res_block(x, a=a[-2], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_2_" + str(i))
     else:
@@ -225,7 +227,7 @@ def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_e
   filter_size = filter_size /2
   x = transpose_conv_layer(x, 3, 2, filter_size, "up_conv_3")
   #x = PS(x,2,512)
-  for i in xrange(nr_res_blocks):
+  for i in range(nr_res_blocks):
     if i == 0:
       x = res_block(x, a=a[-3], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_3_" + str(i))
     else:
@@ -235,7 +237,7 @@ def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_e
   filter_size = filter_size /2
   x = transpose_conv_layer(x, 3, 2, filter_size, "up_conv_4")
   #x = PS(x,2,512)
-  for i in xrange(nr_res_blocks):
+  for i in range(nr_res_blocks):
     if i == 0:
       x = res_block(x, a=a[-4], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_4_" + str(i))
     else:
@@ -246,7 +248,7 @@ def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_e
   print(x.get_shape())
   x = tf.sigmoid(x)
 
-  tf.image_summary('predicted', x)
+  tf.summary.image('predicted', x)
 
 
   return x

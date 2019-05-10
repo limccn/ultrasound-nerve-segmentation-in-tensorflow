@@ -90,8 +90,8 @@ def nerve_inputs(batch_size):
   images, masks = _generate_image_label_batch(image, mask, batch_size)
  
   # display in tf summary page 
-  tf.image_summary('images', images)
-  tf.image_summary('mask', masks)
+  tf.summary.image('images', images)
+  tf.summary.image('mask', masks)
 
   return images, masks 
 

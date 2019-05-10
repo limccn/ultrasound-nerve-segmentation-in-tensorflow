@@ -75,7 +75,7 @@ def evaluate():
     saver = tf.train.Saver(variables_to_restore)
 
     # Build the summary operation based on the TF collection of Summaries.
-    summary_op = tf.merge_all_summaries()
+    summary_op = tf.summary.merge_all()
     
     sess = tf.Session()
 
@@ -89,7 +89,8 @@ def evaluate():
     #                                        graph_def=graph_def)
 
     # make csv file
-    csvfile = open('test.csv', 'wb') 
+    #csvfile = open('test.csv', 'wb') 
+    csvfile = open('test.csv', 'w') 
     writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['img', 'pixels'])
 
@@ -117,8 +118,11 @@ def evaluate():
       generated_mask[:][generated_mask[:]<=threshold]=0 
       generated_mask[:][generated_mask[:]>threshold]=1 
       run_length_encoding = RLenc(generated_mask)
-      writer.writerow([name, run_length_encoding])
       print(run_length_encoding)
+      #name = name.encode('utf8')
+      #run_length_encoding = run_length_encoding.encode('utf8')
+      writer.writerow([name, run_length_encoding])
+
 
       '''
       # convert to display 
@@ -132,6 +136,17 @@ def evaluate():
       if cv2.waitKey(1) & 0xFF == ord('q'):
         break
       '''
+    
+     
+      save_prediction_path = '../data/prediction_save/'
+      filepath_pred = "%s%s.pred.%s"%(save_pred_path,name,f[-3:])
+      filepath_mask = "%s%s.pred.mask.%s"%(save_pred_path,name,f[-3:])
+    
+      # convert to display 
+      generated_mask = np.uint8(generated_mask * 255)
+      cv2.imwrite(filepath_pred, img[0,:,:,0])
+      cv2.imwrite(filepath_mask, generated_mask[:,:,0])
+      
       generated_mask = np.uint8(generated_mask)
 
       if False: 

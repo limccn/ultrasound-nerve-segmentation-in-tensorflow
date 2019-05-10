@@ -11,7 +11,7 @@ Summary of available functions:
 
 import tensorflow as tf
 import numpy as np
-import nerve_architecture
+import model.nerve_architecture
 import input.nerve_input as nerve_input
 
 FLAGS = tf.app.flags.FLAGS
@@ -43,7 +43,7 @@ def inference(inputs, keep_prob):
     keep_prob: dropout layer
   """
   if FLAGS.model == "ced": 
-    prediction = nerve_architecture.conv_ced(inputs, nr_res_blocks=FLAGS.nr_res_blocks, keep_prob=keep_prob, nonlinearity_name=FLAGS.nonlinearity, gated=FLAGS.gated_res)
+    prediction = model.nerve_architecture.conv_ced(inputs, nr_res_blocks=FLAGS.nr_res_blocks, keep_prob=keep_prob, nonlinearity_name=FLAGS.nonlinearity, gated=FLAGS.gated_res)
 
   return prediction 
 
@@ -62,7 +62,7 @@ def loss_image(prediction, mask):
   #prediction = tf.flatten(prediction)
   intersection = tf.reduce_sum(prediction * mask)
   loss = -(2. * intersection + 1.) / (tf.reduce_sum(mask) + tf.reduce_sum(prediction) + 1.)
-  tf.scalar_summary('loss', loss)
+  tf.summary.scalar('loss', loss)
   return loss
 
 def train(total_loss, lr):
