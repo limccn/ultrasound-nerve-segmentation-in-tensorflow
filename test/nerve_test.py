@@ -139,8 +139,8 @@ def evaluate():
     
      
       save_prediction_path = '../data/prediction_save/'
-      filepath_pred = "%s%s.pred.%s"%(save_pred_path,name,f[-3:])
-      filepath_mask = "%s%s.pred.mask.%s"%(save_pred_path,name,f[-3:])
+      filepath_pred = "%s%s.pred.%s"%(save_prediction_path,name,f[-3:])
+      filepath_mask = "%s%s.pred.mask.%s"%(save_prediction_path,name,f[-3:])
     
       # convert to display 
       generated_mask = np.uint8(generated_mask * 255)

@@ -16,7 +16,7 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 8,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 500000,
+tf.app.flags.DEFINE_integer('max_steps', 250000,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.7,
                             """ keep probability for dropout """)
@@ -82,20 +82,20 @@ def train():
     graph_def = sess.graph_def
     summary_writer = tf.summary.FileWriter(TRAIN_DIR, sess.graph)
 
-    for step in range(FLAGS.max_steps):
+    for step in range(FLAGS.max_steps+1):
       t = time.time()
       _ , loss_value = sess.run([train_op, error],feed_dict={})
       elapsed = time.time() - t
 
       assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
-      if step%50 == 0:
+      if step%100 == 0:
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step) 
         print("loss value at " + str(loss_value))
         print("time per batch is " + str(elapsed))
 
-      if step%500 == 0:
+      if step%1000 == 0:
         checkpoint_path = os.path.join(TRAIN_DIR, 'model.ckpt')
         saver.save(sess, checkpoint_path, global_step=step)  
         print("saved to " + TRAIN_DIR)
