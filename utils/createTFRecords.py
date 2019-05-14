@@ -34,7 +34,7 @@ pair_filename = []
 
 for image in image_filename:
   key = image[:-4] 
-  mask = [s for s in mask_filename if key in s][0]
+  mask = [s for s in mask_filename if key+'_mask' in s][0] #might some bug happens
   pair_filename.append((image, mask))
 
 for pair in pair_filename:
