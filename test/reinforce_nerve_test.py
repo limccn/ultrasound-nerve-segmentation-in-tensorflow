@@ -105,11 +105,11 @@ def evaluate():
       img_inforce=dict()
       # brighness + contrast
       # g(x) = br * f(x) + co
-      for co in range(5, 15):
+      for co in range(6, 20):
         con = co/10.
-        bri_base = int(125*(1-co))
-        for br in range(0, 10) :
-          bri = bri_base + br * 10 - 50
+        bri_base = int(125*(1-con))
+        for br in range(2, 22) :
+          bri = bri_base + (br * 10) - 50
           res = np.uint8(np.clip((con * img + bri), 0, 255))
           key = "br_"+str(br)+"co_"+str(co)
           print(key)
