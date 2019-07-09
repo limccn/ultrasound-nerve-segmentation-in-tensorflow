@@ -21,13 +21,19 @@ import input.nerve_input as nerve_input
 from run_length_encoding import RLenc
 from utils.experiment_manager import make_checkpoint_path
 
+import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
+#os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
+
+
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 16,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 510000,
+tf.app.flags.DEFINE_integer('max_steps', 2501000,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.668,
                             """ keep probability for dropout """)
@@ -61,6 +67,8 @@ def evaluate():
   # sort the file names but this is probably not ness
   filenames.sort(key=alphanum_key)
   #num_files = len(filename)
+
+  print (filenames)
 
   with tf.Graph().as_default():
     # Make image placeholder
@@ -140,15 +148,15 @@ def evaluate():
         #writer.writerow([name, run_length_encoding])
      
         save_prediction_path = '../data/rein_pred_save/'
-        filepath_pred = "%s%s_%s_pred.%s"%(save_prediction_path,name,key,f[-3:])
+     #   filepath_pred = "%s%s_%s_pred.%s"%(save_prediction_path,name,key,f[-3:])
         filepath_mask = "%s%s_%s_mask.%s"%(save_prediction_path,name,key,f[-3:])
       
-        print(filepath_pred)
+      #  print(filepath_pred)
         print(filepath_mask)
 
         # convert to display 
         generated_mask = np.uint8(generated_mask * 255)
-        cv2.imwrite(filepath_pred, img_inf[0,:,:,0])
+    #    cv2.imwrite(filepath_pred, img_inf[0,:,:,0])
         cv2.imwrite(filepath_mask, generated_mask[:,:,0])
         
         generated_mask = np.uint8(generated_mask)

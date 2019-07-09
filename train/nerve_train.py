@@ -10,15 +10,21 @@ sys.path.append('../')
 import model.nerve_net as nerve_net
 from utils.experiment_manager import make_checkpoint_path
 
+import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+#os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
+
+
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
-tf.app.flags.DEFINE_integer('batch_size', 8,
+tf.app.flags.DEFINE_integer('batch_size', 16,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 250000,
+tf.app.flags.DEFINE_integer('max_steps', 2501000,
                             """ max number of steps to train """)
-tf.app.flags.DEFINE_float('keep_prob', 0.7,
+tf.app.flags.DEFINE_float('keep_prob', 0.668,
                             """ keep probability for dropout """)
 tf.app.flags.DEFINE_float('learning_rate', 1e-5,
                             """ keep probability for dropout """)
@@ -64,7 +70,7 @@ def train():
     #gpu
     sess_config = tf.ConfigProto(allow_soft_placement=True)
     sess_config.gpu_options.allow_growth=True
-    #sess_config.gpu_options.per_process_gpu_memory_fraction=0.8
+    sess_config.gpu_options.per_process_gpu_memory_fraction=0.9
 
     # Start running operations on the Graph.
     #sess = tf.Session()

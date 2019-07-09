@@ -32,16 +32,14 @@ def write2TFRecord(image, mask):
     'mask': _bytes_feature(mask)})) 
   writer.write(example.SerializeToString()) 
 
-'''
-def write2TFRecord(image, mask):
-  cv2.imshow('image', image) 
-  cv2.waitKey(0)
-  cv2.imshow('mask', mask)
-  cv2.waitKey(0)
-''' 
+#def write2TFRecord(image, mask):
+#  cv2.imshow('image', image) 
+#  cv2.waitKey(0)
+#  cv2.imshow('mask', mask)
+#  cv2.waitKey(0) 
 
 # create tf writer
-record_filename = 'data/tfrecords/train.tfrecords'
+record_filename = '../data/tfrecords/train.tfrecords'
 
 writer = tf.python_io.TFRecordWriter(record_filename)
 
@@ -53,7 +51,7 @@ shape = (cols, rows)
 frames = np.zeros((shape[0], shape[1], 1))
 
 # list of files
-train_filename = glb('data/train/*') 
+train_filename = glb('../data/train/*') 
 mask_filename = [s for s in train_filename if "mask" in s]
 image_filename = [s for s in train_filename if "mask" not in s]
 
@@ -79,7 +77,49 @@ for pair in pair_filename:
   # reinforcement 
   # origin
   write2TFRecord(image,mask)
-   
+
+  # move left
+  image_left_20 = np.zeros((cols,rows), np.uint8)
+  mask_left_20 = np.zeros((cols,rows), np.uint8)
+  image_left_20[20:,:] = image[:-20,:]
+  mask_left_20[20:,:] = mask[:-20,:]
+  write2TFRecord(image_left_20, mask_left_20)
+
+  # move right
+  image_right_20 = np.zeros((cols,rows), np.uint8)
+  mask_right_20 = np.zeros((cols,rows), np.uint8)
+  image_right_20[0:-20,:] = image[20:,:]
+  mask_right_20[0:-20,:] = mask[20:,:]
+  write2TFRecord(image_right_20, mask_right_20)
+
+  # move left
+  image_left_40 = np.zeros((cols,rows), np.uint8)
+  mask_left_40 = np.zeros((cols,rows), np.uint8)
+  image_left_40[40:,:] = image[:-40,:]
+  mask_left_40[40:,:] = mask[:-40,:]
+  write2TFRecord(image_left_40, mask_left_40)
+
+  # move right
+  image_right_40 = np.zeros((cols,rows), np.uint8)
+  mask_right_40 = np.zeros((cols,rows), np.uint8)
+  image_right_40[0:-40,:] = image[40:,:]
+  mask_right_40[0:-40,:] = mask[40:,:]
+  write2TFRecord(image_right_40, mask_right_40)
+
+  # move left 
+  image_left_60 = np.zeros((cols,rows), np.uint8)
+  mask_left_60 = np.zeros((cols,rows), np.uint8)
+  image_left_60[60:,:] = image[:-60,:]
+  mask_left_60[60:,:] = mask[:-60,:]
+  write2TFRecord(image_left_60, mask_left_60)
+
+  # move right
+  image_right_60 = np.zeros((cols,rows), np.uint8)
+  mask_right_60 = np.zeros((cols,rows), np.uint8)
+  image_right_60[0:-60,:] = image[60:,:]
+  mask_right_60[0:-60,:] = mask[60:,:]
+  write2TFRecord(image_right_60, mask_right_60)
+
   # move left top 
   image_left_top_20 = np.zeros((cols,rows), np.uint8)
   mask_left_top_20 = np.zeros((cols,rows), np.uint8)
@@ -107,6 +147,34 @@ for pair in pair_filename:
   image_right_top_20[20:,0:-20] = image[0:-20,20:]
   mask_right_top_20[20:,0:-20] = mask[0:-20,20:]
   write2TFRecord(image_right_top_20, mask_right_top_20)
+
+  # move left top 
+  image_left_top_40 = np.zeros((cols,rows), np.uint8)
+  mask_left_top_40 = np.zeros((cols,rows), np.uint8)
+  image_left_top_40[40:,40:] = image[:-40,:-40]
+  mask_left_top_40[40:,40:] = mask[:-40,:-40]
+  write2TFRecord(image_left_top_40, mask_left_top_40)
+
+  # move right bottom
+  image_right_bottom_40 = np.zeros((cols,rows), np.uint8)
+  mask_right_bottom_40 = np.zeros((cols,rows), np.uint8)
+  image_right_bottom_40[0:-40,0:-40] = image[40:,40:]
+  mask_right_bottom_40[0:-40,0:-40] = mask[40:,40:]
+  write2TFRecord(image_right_bottom_40, mask_right_bottom_40)
+
+  # move left bottom
+  image_left_bottom_40 = np.zeros((cols,rows), np.uint8)
+  mask_left_bottom_40 = np.zeros((cols,rows), np.uint8)
+  image_left_bottom_40[0:-40,40:] = image[40:,0:-40]
+  mask_left_bottom_40[0:-40,40:] = mask[40:,0:-40]
+  write2TFRecord(image_left_bottom_40, mask_left_bottom_40)
+
+  # move right top
+  image_right_top_40 = np.zeros((cols,rows), np.uint8)
+  mask_right_top_40 = np.zeros((cols,rows), np.uint8)
+  image_right_top_40[40:,0:-40] = image[0:-40,40:]
+  mask_right_top_40[40:,0:-40] = mask[0:-40,40:]
+  write2TFRecord(image_right_top_40, mask_right_top_40)
 
   # flip vertical
   image_flip_v = cv2.flip(image, 1)
@@ -145,3 +213,15 @@ for pair in pair_filename:
   image_matrix_m5 = cv2.warpAffine(image, matrix_m5, (rows, cols))
   mask_matrix_m5 = cv2.warpAffine(mask, matrix_m5, (rows, cols))
   write2TFRecord(image_matrix_m5, mask_matrix_m5)
+
+  # Rotation Matrix2D
+  matrix_10 = cv2.getRotationMatrix2D((rows / 2 , cols / 2), 10, 1.1)
+  image_matrix_10 = cv2.warpAffine(image, matrix_10, (rows, cols))
+  mask_matrix_10 = cv2.warpAffine(mask, matrix_10, (rows, cols))
+  write2TFRecord(image_matrix_10, mask_matrix_10)
+
+  # Rotation Matrix2D
+  matrix_m10 = cv2.getRotationMatrix2D((rows / 2 , cols / 2), -10, 1.1)
+  image_matrix_m10 = cv2.warpAffine(image, matrix_m10, (rows, cols))
+  mask_matrix_m10 = cv2.warpAffine(mask, matrix_m10, (rows, cols))
+  write2TFRecord(image_matrix_m10, mask_matrix_m10)
