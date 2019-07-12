@@ -18,11 +18,16 @@ def _bytes_feature(value):
 
 
 def write2TFRecord(image, mask):
+  
+  # change image size
+  image = cv2.resize(image, (290,210))
+  mask = cv2.resize(mask, (290,210))
+  
   # process frame for saving
   image = np.uint8(image)
   mask = np.uint8(mask)
-  image = image.reshape([1,shape[0]*shape[1]])
-  mask = mask.reshape([1,shape[0]*shape[1]])
+  image = image.reshape([1,shape[0]//2*shape[1]//2])
+  mask = mask.reshape([1,shape[0]//2*shape[1]//2])
   image = image.tostring()
   mask = mask.tostring()
 
@@ -39,7 +44,7 @@ def write2TFRecord(image, mask):
 #  cv2.waitKey(0) 
 
 # create tf writer
-record_filename = '../data/tfrecords/train.tfrecords'
+record_filename = '../data/tfrecords/train_rein.tfrecords'
 
 writer = tf.python_io.TFRecordWriter(record_filename)
 
@@ -78,103 +83,101 @@ for pair in pair_filename:
   # origin
   write2TFRecord(image,mask)
 
+  for px in range(10,40,10):
+    # move top
+    image_top = np.zeros((cols,rows), np.uint8)
+    mask_top = np.zeros((cols,rows), np.uint8)
+    image_top[px:,:] = image[:-px,:]
+    mask_top[px:,:] = mask[:-px,:]
+    write2TFRecord(image_top, mask_top)
+
+  for px in range(10,40,10):
+    # move bottom
+    image_bottom = np.zeros((cols,rows), np.uint8)
+    mask_bottom = np.zeros((cols,rows), np.uint8)
+    image_bottom[0:-px,:] = image[px:,:]
+    mask_bottom[0:-px,:] = mask[px:,:]
+    write2TFRecord(image_bottom, mask_bottom)
+  
   # move left
-  image_left_20 = np.zeros((cols,rows), np.uint8)
-  mask_left_20 = np.zeros((cols,rows), np.uint8)
-  image_left_20[20:,:] = image[:-20,:]
-  mask_left_20[20:,:] = mask[:-20,:]
-  write2TFRecord(image_left_20, mask_left_20)
+  for px in range(10,60,10):
+    image_left = np.zeros((cols,rows), np.uint8)
+    mask_left = np.zeros((cols,rows), np.uint8)
+    image_left[:,px:] = image[:,:-px]
+    mask_left[:,px:] = mask[:,:-px]
+    write2TFRecord(image_left, mask_left)
 
   # move right
-  image_right_20 = np.zeros((cols,rows), np.uint8)
-  mask_right_20 = np.zeros((cols,rows), np.uint8)
-  image_right_20[0:-20,:] = image[20:,:]
-  mask_right_20[0:-20,:] = mask[20:,:]
-  write2TFRecord(image_right_20, mask_right_20)
-
-  # move left
-  image_left_40 = np.zeros((cols,rows), np.uint8)
-  mask_left_40 = np.zeros((cols,rows), np.uint8)
-  image_left_40[40:,:] = image[:-40,:]
-  mask_left_40[40:,:] = mask[:-40,:]
-  write2TFRecord(image_left_40, mask_left_40)
-
-  # move right
-  image_right_40 = np.zeros((cols,rows), np.uint8)
-  mask_right_40 = np.zeros((cols,rows), np.uint8)
-  image_right_40[0:-40,:] = image[40:,:]
-  mask_right_40[0:-40,:] = mask[40:,:]
-  write2TFRecord(image_right_40, mask_right_40)
-
-  # move left 
-  image_left_60 = np.zeros((cols,rows), np.uint8)
-  mask_left_60 = np.zeros((cols,rows), np.uint8)
-  image_left_60[60:,:] = image[:-60,:]
-  mask_left_60[60:,:] = mask[:-60,:]
-  write2TFRecord(image_left_60, mask_left_60)
-
-  # move right
-  image_right_60 = np.zeros((cols,rows), np.uint8)
-  mask_right_60 = np.zeros((cols,rows), np.uint8)
-  image_right_60[0:-60,:] = image[60:,:]
-  mask_right_60[0:-60,:] = mask[60:,:]
-  write2TFRecord(image_right_60, mask_right_60)
+  for px in range(10,60,10):
+    image_right = np.zeros((cols,rows), np.uint8)
+    mask_right = np.zeros((cols,rows), np.uint8)
+    image_right[:,0:-px] = image[:,px:]
+    mask_right[:,0:-px] = mask[:,px:]
+    write2TFRecord(image_right, mask_right)
 
   # move left top 
-  image_left_top_20 = np.zeros((cols,rows), np.uint8)
-  mask_left_top_20 = np.zeros((cols,rows), np.uint8)
-  image_left_top_20[20:,20:] = image[:-20,:-20]
-  mask_left_top_20[20:,20:] = mask[:-20,:-20]
-  write2TFRecord(image_left_top_20, mask_left_top_20)
+  for px in range(10,40,10):
+    image_left_top = np.zeros((cols,rows), np.uint8)
+    mask_left_top = np.zeros((cols,rows), np.uint8)
+    image_left_top[px:,px:] = image[:-px,:-px]
+    mask_left_top[px:,px:] = mask[:-px,:-px]
+    write2TFRecord(image_left_top, mask_left_top)
 
   # move right bottom
-  image_right_bottom_20 = np.zeros((cols,rows), np.uint8)
-  mask_right_bottom_20 = np.zeros((cols,rows), np.uint8)
-  image_right_bottom_20[0:-20,0:-20] = image[20:,20:]
-  mask_right_bottom_20[0:-20,0:-20] = mask[20:,20:]
-  write2TFRecord(image_right_bottom_20, mask_right_bottom_20)
+  for px in range(10,40,10):
+    image_right_bottom = np.zeros((cols,rows), np.uint8)
+    mask_right_bottom = np.zeros((cols,rows), np.uint8)
+    image_right_bottom[0:-px,0:-px] = image[px:,px:]
+    mask_right_bottom[0:-px,0:-px] = mask[px:,px:]
+    write2TFRecord(image_right_bottom, mask_right_bottom)
 
   # move left bottom
-  image_left_bottom_20 = np.zeros((cols,rows), np.uint8)
-  mask_left_bottom_20 = np.zeros((cols,rows), np.uint8)
-  image_left_bottom_20[0:-20,20:] = image[20:,0:-20]
-  mask_left_bottom_20[0:-20,20:] = mask[20:,0:-20]
-  write2TFRecord(image_left_bottom_20, mask_left_bottom_20)
+  for px in range(10,40,10):
+    image_left_bottom = np.zeros((cols,rows), np.uint8)
+    mask_left_bottom = np.zeros((cols,rows), np.uint8)
+    image_left_bottom[0:-px,px:] = image[px:,0:-px]
+    mask_left_bottom[0:-px,px:] = mask[px:,0:-px]
+    write2TFRecord(image_left_bottom, mask_left_bottom)
 
   # move right top
-  image_right_top_20 = np.zeros((cols,rows), np.uint8)
-  mask_right_top_20 = np.zeros((cols,rows), np.uint8)
-  image_right_top_20[20:,0:-20] = image[0:-20,20:]
-  mask_right_top_20[20:,0:-20] = mask[0:-20,20:]
-  write2TFRecord(image_right_top_20, mask_right_top_20)
+  for px in range(10,40,10):
+    image_right_top = np.zeros((cols,rows), np.uint8)
+    mask_right_top = np.zeros((cols,rows), np.uint8)
+    image_right_top[px:,0:-px] = image[0:-px,px:]
+    mask_right_top[px:,0:-px] = mask[0:-px,px:]
+    write2TFRecord(image_right_top, mask_right_top)
 
-  # move left top 
-  image_left_top_40 = np.zeros((cols,rows), np.uint8)
-  mask_left_top_40 = np.zeros((cols,rows), np.uint8)
-  image_left_top_40[40:,40:] = image[:-40,:-40]
-  mask_left_top_40[40:,40:] = mask[:-40,:-40]
-  write2TFRecord(image_left_top_40, mask_left_top_40)
+    # 按照比例缩放，如x,y轴均放大
+  for px in range(10,60,10):
+    image_resize = cv2.resize(image, (rows+px*2,cols+px*2))
+    mask_resize = cv2.resize(mask, (rows+px*2,cols+px*2))
+    image_corp = image_resize[px:cols+px,px:rows+px]
+    mask_corp = mask_resize[px:cols+px,px:rows+px]
+    write2TFRecord(image_corp, mask_corp)
 
-  # move right bottom
-  image_right_bottom_40 = np.zeros((cols,rows), np.uint8)
-  mask_right_bottom_40 = np.zeros((cols,rows), np.uint8)
-  image_right_bottom_40[0:-40,0:-40] = image[40:,40:]
-  mask_right_bottom_40[0:-40,0:-40] = mask[40:,40:]
-  write2TFRecord(image_right_bottom_40, mask_right_bottom_40)
+  # 按照比例缩放，如x,y轴均放大
+  for px in range(10,60,10):
+    image_resize = cv2.resize(image, (rows-px*2,cols-px*2))
+    mask_resize = cv2.resize(mask, (rows-px*2,cols-px*2))
+    image_padding = np.zeros((cols,rows), np.uint8)
+    mask_padding = np.zeros((cols,rows), np.uint8)
+    image_padding[px:cols-px,px:rows-px] = image_resize
+    mask_padding[px:cols-px,px:rows-px] = mask_resize
+    write2TFRecord(image_padding, mask_padding)
 
-  # move left bottom
-  image_left_bottom_40 = np.zeros((cols,rows), np.uint8)
-  mask_left_bottom_40 = np.zeros((cols,rows), np.uint8)
-  image_left_bottom_40[0:-40,40:] = image[40:,0:-40]
-  mask_left_bottom_40[0:-40,40:] = mask[40:,0:-40]
-  write2TFRecord(image_left_bottom_40, mask_left_bottom_40)
+  # Rotation Matrix2D
+  for px in range(5,25,5):
+    matrix = cv2.getRotationMatrix2D((rows / 2 , cols / 2), px, 1.2)
+    image_matrix = cv2.warpAffine(image, matrix, (rows, cols))
+    mask_matrix = cv2.warpAffine(mask, matrix, (rows, cols))
+    write2TFRecord(image_matrix, mask_matrix)
 
-  # move right top
-  image_right_top_40 = np.zeros((cols,rows), np.uint8)
-  mask_right_top_40 = np.zeros((cols,rows), np.uint8)
-  image_right_top_40[40:,0:-40] = image[0:-40,40:]
-  mask_right_top_40[40:,0:-40] = mask[0:-40,40:]
-  write2TFRecord(image_right_top_40, mask_right_top_40)
+  # Rotation Matrix2D
+  for px in range(5,25,5):
+    matrix_m = cv2.getRotationMatrix2D((rows / 2 , cols / 2), -px, 1.2)
+    image_matrix_m = cv2.warpAffine(image, matrix_m, (rows, cols))
+    mask_matrix_m = cv2.warpAffine(mask, matrix_m, (rows, cols))
+    write2TFRecord(image_matrix_m, mask_matrix_m)
 
   # flip vertical
   image_flip_v = cv2.flip(image, 1)
@@ -186,42 +189,3 @@ for pair in pair_filename:
   mask_flip_h = cv2.flip(mask, 2)
   write2TFRecord(image_flip_h, mask_flip_h)
 
-  # 按照比例缩放，如x,y轴均放大
-  image_resize = cv2.resize(image, (rows+40,cols+40))
-  mask_resize = cv2.resize(mask, (rows+40,cols+40))
-  image_corp = image_resize[20:cols+20,20:rows+20]
-  mask_corp = mask_resize[20:cols+20,20:rows+20]
-  write2TFRecord(image_corp, mask_corp)
-
-  # 按照比例缩放，如x,y轴均放大
-  image_resize = cv2.resize(image, (rows-40,cols-40))
-  mask_resize = cv2.resize(mask, (rows-40,cols-40))
-  image_padding = np.zeros((cols,rows), np.uint8)
-  mask_padding = np.zeros((cols,rows), np.uint8)
-  image_padding[20:cols-20,20:rows-20] = image_resize
-  mask_padding[20:cols-20,20:rows-20] = mask_resize
-  write2TFRecord(image_padding, mask_padding)
-
-  # Rotation Matrix2D
-  matrix_5 = cv2.getRotationMatrix2D((rows / 2 , cols / 2), 5, 1.1)
-  image_matrix_5 = cv2.warpAffine(image, matrix_5, (rows, cols))
-  mask_matrix_5 = cv2.warpAffine(mask, matrix_5, (rows, cols))
-  write2TFRecord(image_matrix_5, mask_matrix_5)
-
-  # Rotation Matrix2D
-  matrix_m5 = cv2.getRotationMatrix2D((rows / 2 , cols / 2), -5, 1.1)
-  image_matrix_m5 = cv2.warpAffine(image, matrix_m5, (rows, cols))
-  mask_matrix_m5 = cv2.warpAffine(mask, matrix_m5, (rows, cols))
-  write2TFRecord(image_matrix_m5, mask_matrix_m5)
-
-  # Rotation Matrix2D
-  matrix_10 = cv2.getRotationMatrix2D((rows / 2 , cols / 2), 10, 1.1)
-  image_matrix_10 = cv2.warpAffine(image, matrix_10, (rows, cols))
-  mask_matrix_10 = cv2.warpAffine(mask, matrix_10, (rows, cols))
-  write2TFRecord(image_matrix_10, mask_matrix_10)
-
-  # Rotation Matrix2D
-  matrix_m10 = cv2.getRotationMatrix2D((rows / 2 , cols / 2), -10, 1.1)
-  image_matrix_m10 = cv2.warpAffine(image, matrix_m10, (rows, cols))
-  mask_matrix_m10 = cv2.warpAffine(mask, matrix_m10, (rows, cols))
-  write2TFRecord(image_matrix_m10, mask_matrix_m10)

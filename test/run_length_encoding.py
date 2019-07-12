@@ -23,6 +23,13 @@ def RLenc(img,order='F',format=True):
     """
     bytes = img.reshape(img.shape[0] * img.shape[1], order=order)
     runs = [] ## list of run lengths
+
+    # RLeC < 30 Drop
+    gt0 = np.where(bytes > 0)[0]
+    #print("RlenC=%d",len(gt0))
+    if len(gt0) < 30:  # consider as empty
+        return '' 
+
     r = 0     ## the current run length
     pos = 1   ## count starts from 1 per WK
     for c in bytes:

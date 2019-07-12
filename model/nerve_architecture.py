@@ -244,7 +244,7 @@ def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_e
       x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_4_" + str(i))
   
   x = conv_layer(x, 3, 1, 1, "last_conv")
-  x = x[:,6:426,6:586,:]
+  x = x[:,6:216,6:296,:]
   print(x.get_shape())
   x = tf.sigmoid(x)
 

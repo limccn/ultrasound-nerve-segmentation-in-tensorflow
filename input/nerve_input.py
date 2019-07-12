@@ -8,7 +8,7 @@ from glob import glob as glb
 FLAGS = tf.app.flags.FLAGS
 
 # Constants describing the training process.
-tf.app.flags.DEFINE_integer('min_queue_examples', 1000,
+tf.app.flags.DEFINE_integer('min_queue_examples', 2000,
                            """ min examples to queue up""")
 
 def read_data(filename_queue, shape):
@@ -51,7 +51,7 @@ def _generate_image_label_batch(image, mask, batch_size, shuffle=True):
     images: Images. 4D tensor of [batch_size, height, width, 1] size.
   """
 
-  num_preprocess_threads = 2
+  num_preprocess_threads = 16
   if shuffle:
     #Create a queue that shuffles the examples, and then
     #read 'batch_size' images + labels from the example queue.
@@ -78,9 +78,9 @@ def nerve_inputs(batch_size):
     mask: Images. 4D tensor. Possible of size [batch_size, 84x84x4].
   """
 
-  shape = (420,580)
+  shape = (210,290)
 
-  tfrecord_filename = glb('../data/tfrecords/*') 
+  tfrecord_filename = glb('../data/tfrecords/train_sim_rein.tfrecords') 
   print(tfrecord_filename)
   
   filename_queue = tf.train.string_input_producer(tfrecord_filename) 
