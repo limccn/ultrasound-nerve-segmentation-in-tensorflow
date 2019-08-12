@@ -33,7 +33,7 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 6101000,
+tf.app.flags.DEFINE_integer('max_steps', 184183,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.668,
                             """ keep probability for dropout """)
@@ -84,6 +84,8 @@ def evaluate():
     summary_op = tf.summary.merge_all()
     
     sess = tf.Session()
+    # Use CPU instead GPU
+    #sess = tf.Session(config=tf.ConfigProto(device_count={'gpu':0}))
 
     ckpt = tf.train.get_checkpoint_state(TEST_DIR)
 
@@ -96,7 +98,7 @@ def evaluate():
 
     # make csv file
     #csvfile = open('test.csv', 'wb') 
-    csvfile = open('test.csv', 'w') 
+    csvfile = open('test_m3_184183.csv', 'w') 
     writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['img', 'pixels'])
 
@@ -109,7 +111,7 @@ def evaluate():
       # read in image
       img = cv2.imread(f, 0)
       # resize
-      img = cv2.resize(img,(290,210))
+      img = cv2.resize(img,(290,210),interpolation=cv2.INTER_LANCZOS4)
       
       img = img - np.mean(img)
  
@@ -124,7 +126,7 @@ def evaluate():
       generated_mask = generated_mask[0]
       generated_mask = generated_mask[0, :, :, :]
      
-      generated_mask = cv2.resize(generated_mask,(580,420))
+      generated_mask = cv2.resize(generated_mask,(580,420),interpolation=cv2.INTER_LANCZOS4)
 
       # bin for converting to row format
       threshold = .5

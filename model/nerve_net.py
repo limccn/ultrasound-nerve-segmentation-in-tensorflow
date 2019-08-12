@@ -63,6 +63,11 @@ def loss_image(prediction, mask):
   intersection = tf.reduce_sum(prediction * mask)
   loss = -(2. * intersection + 1.) / (tf.reduce_sum(mask) + tf.reduce_sum(prediction) + 1.)
   tf.summary.scalar('loss', loss)
+
+  #conformity coefficient
+  conf_loss=(3.*loss - 2.) / loss
+  tf.summary.scalar('conformity', conf_loss)
+
   return loss
 
 def train(total_loss, lr):

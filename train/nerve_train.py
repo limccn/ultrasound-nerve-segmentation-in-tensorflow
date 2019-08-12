@@ -12,8 +12,8 @@ from utils.experiment_manager import make_checkpoint_path
 
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-#os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
+#os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -22,12 +22,17 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 2001000,
+tf.app.flags.DEFINE_integer('max_steps', 186002,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.668,
                             """ keep probability for dropout """)
 tf.app.flags.DEFINE_float('learning_rate', 1e-5,
                             """ keep probability for dropout """)
+#tf.app.flags.DEFINE_integer("epoch_num", 25,
+#                            """Epoch to train [25]""")
+
+#file_count:5635
+#record_count:73255
 
 
 TRAIN_DIR = make_checkpoint_path(FLAGS.base_dir, FLAGS)
@@ -97,14 +102,25 @@ def train():
 
       if step%100 == 0:
         summary_str = sess.run(summary_op, feed_dict={})
-        summary_writer.add_summary(summary_str, step) 
+        summary_writer.add_summary(summary_str, step)
         print("loss value at " + str(loss_value))
         print("time per batch is " + str(elapsed))
 
-      if step%1000 == 0:
-        checkpoint_path = os.path.join(TRAIN_DIR, 'model.ckpt')
-        saver.save(sess, checkpoint_path, global_step=step)  
-        print("saved to " + TRAIN_DIR)
+      #if step%1000 == 0:
+      #  checkpoint_path = os.path.join(TRAIN_DIR, 'model.ckpt')
+      #  saver.save(sess, checkpoint_path, global_step=step)  
+      #  print("saved to " + TRAIN_DIR)
+      
+      #epoch
+      if step%(1144) == 1143:
+        epoch=1+step//1144
+        summary_str = sess.run(summary_op, feed_dict={})
+        summary_writer.add_summary(summary_str, step)
+        print("epoch=%d,loss=%s,steps=%d "%(epoch,str(loss_value),step))
+        # save
+        if epoch>100:
+            checkpoint_path = os.path.join(TRAIN_DIR, 'model_epoch%d.ckpt'%epoch)
+            saver.save(sess, checkpoint_path, global_step=step)
 
 def main(argv=None):  # pylint: disable=unused-argument
   if tf.gfile.Exists(TRAIN_DIR):
