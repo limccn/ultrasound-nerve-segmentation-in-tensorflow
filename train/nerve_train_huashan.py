@@ -21,9 +21,9 @@ FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
-tf.app.flags.DEFINE_integer('batch_size', 32,
+tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 100000,
+tf.app.flags.DEFINE_integer('max_steps', 50000,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.69315, #ln2
                             """ keep probability for dropout """)
@@ -104,7 +104,7 @@ def train():
 
       assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
         
-      if step%100 == 0:
+      if step%32 == 0:
         # meric distance
         np_predictions = prediction.eval(session=sess)
         np_masks= mask.eval(session=sess)
@@ -157,7 +157,7 @@ def train():
         #tf.summary.scalar('ASD', asd)
         #tf.summary.scalar('MSD', msd)
 
-      if step%100 == 0:
+      if step%32 == 0:
         metric_list = sess.run([metric],feed_dict={})
         if metric_list and len(metric_list) > 0:
             metric_matrix = metric_list[0]
@@ -172,7 +172,7 @@ def train():
 
       #if step%100 == 0:
          
-      if step%100 == 0:
+      if step%32 == 0:
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step)
         print("loss value at " + str(loss_value))
@@ -184,13 +184,13 @@ def train():
       #  print("saved to " + TRAIN_DIR)
       
       #epoch
-      if step%(1144) == 1143:
-        epoch=1+step//1144
+      if step%(128) == 127:
+        epoch=1+step//128
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step)
         print("epoch=%d,loss=%s,steps=%d "%(epoch,str(loss_value),step))
         # save
-        if epoch>50:
+        if epoch>100:
             checkpoint_path = os.path.join(TRAIN_DIR, 'model_epoch%d.ckpt'%epoch)
             saver.save(sess, checkpoint_path, global_step=step)
 

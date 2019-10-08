@@ -23,8 +23,8 @@ from utils.experiment_manager import make_checkpoint_path
 
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
-#os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
+#os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -33,7 +33,7 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 209351,
+tf.app.flags.DEFINE_integer('max_steps', 50000,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.69315,
                             """ keep probability for dropout """)
@@ -98,14 +98,16 @@ def evaluate():
 
     # make csv file
     #csvfile = open('test.csv', 'wb') 
-    csvfile = open('test_m7_n1_crelu_209351.csv', 'w') 
+    csvfile = open('cross_valid_huashan_kaggle.csv', 'w') 
     writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['img', 'pixels'])
 
     for f in filenames:
       # name to save 
       prediction_path = '../data/prediction/'
-      name = f[13:-4]
+      name = f.replace('../data/test_huashan/','')
+      name,extname = os.path.splitext(name)
+      #name = f[:-4]
       print(name)
      
       # read in image
@@ -141,28 +143,31 @@ def evaluate():
       writer.writerow([name, run_length_encoding])
 
 
-      '''
+      
       # convert to display 
-      generated_mask = np.uint8(generated_mask * 255)
+      #generated_mask = np.uint8(generated_mask * 255)
  
       # display image
-      cv2.imshow('img', img[0,:,:,0])
-      cv2.waitKey(0)
-      cv2.imshow('mask', generated_mask[:,:,0])
-      cv2.waitKey(0)
-      if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-      '''
+      #cv2.imshow('img', img[0,:,:,0])
+      #cv2.waitKey(0)
+      #cv2.imshow('mask', generated_mask[:,:,0])
+      #cv2.waitKey(0)
+      #if cv2.waitKey(1) & 0xFF == ord('q'):
+      #  break
+
     
       '''
-      save_prediction_path = '../data/prediction_save/'
-      filepath_pred = "%s%s.pred.%s"%(save_prediction_path,name,f[-3:])
-      filepath_mask = "%s%s.pred.mask.%s"%(save_prediction_path,name,f[-3:])
+      save_prediction_path = '../data/pred_save_huashan/'
+      filepath_pred = "%s%s_pred_%s"%(save_prediction_path,name,extname)
+      filepath_mask = "%s%s_pred_mask%s"%(save_prediction_path,name,extname)
     
+
       # convert to display 
       generated_mask = np.uint8(generated_mask * 255)
-      cv2.imwrite(filepath_pred, img[0,:,:,0])
-      cv2.imwrite(filepath_mask, generated_mask[:,:,0])
+      save_img=img[0,:,:,0]
+      save_img = cv2.resize(save_img,(580,420),interpolation=cv2.INTER_CUBIC)
+      cv2.imwrite(filepath_pred, save_img)
+      cv2.imwrite(filepath_mask, generated_mask[:,:])
       '''
 
       generated_mask = np.uint8(generated_mask)

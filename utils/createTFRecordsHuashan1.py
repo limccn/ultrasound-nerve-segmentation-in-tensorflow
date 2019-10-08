@@ -46,7 +46,7 @@ def write2TFRecord(image, mask):
 #  cv2.waitKey(0) 
 
 # create tf writer
-record_filename = '../data/tfrecords/train_sim_rein6.tfrecords'
+record_filename = '../data/tfrecords/train_huashan.tfrecords'
 record_count=0
 
 writer = tf.python_io.TFRecordWriter(record_filename)
@@ -59,7 +59,7 @@ shape = (cols, rows)
 frames = np.zeros((shape[0], shape[1], 1))
 
 # list of files
-train_filename = glb('../data/train/*') 
+train_filename = glb('../data/train_huashan/*') 
 mask_filename = [s for s in train_filename if "mask" in s]
 image_filename = [s for s in train_filename if "mask" not in s]
 
@@ -88,7 +88,7 @@ for pair in pair_filename:
   # origin
   write2TFRecord(image,mask)
 
-  '''
+  
   for px in range(10,40,10):
     # move top
     image_top = np.zeros((cols,rows), np.uint8)
@@ -152,7 +152,7 @@ for pair in pair_filename:
     image_right_top[px:,0:-px] = image[0:-px,px:]
     mask_right_top[px:,0:-px] = mask[0:-px,px:]
     write2TFRecord(image_right_top, mask_right_top)
-  '''
+  
   # 按照比例缩放，如x,y轴均放大
   for px in range(10,30,10):
     image_resize = cv2.resize(image, (rows+px*2,cols+px*2))
