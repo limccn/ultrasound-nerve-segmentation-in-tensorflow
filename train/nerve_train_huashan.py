@@ -23,12 +23,17 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 50000,
+tf.app.flags.DEFINE_integer('max_steps', 21000,
                             """ max number of steps to train """)
-tf.app.flags.DEFINE_float('keep_prob', 0.69315, #ln2
+#tf.app.flags.DEFINE_float('keep_prob', 0.69315, #ln2
+tf.app.flags.DEFINE_float('keep_prob', 0.668, # gd
                             """ keep probability for dropout """)
 tf.app.flags.DEFINE_float('learning_rate', 1e-5,
                             """ keep probability for dropout """)
+#tf.app.flags.DEFINE_integer('bn_gamma', 1,
+#                            """ BatchNorm gamma """)
+#tf.app.flags.DEFINE_integer('bn_beta', 0,
+#                            """ BatchNorm beta """)
 #tf.app.flags.DEFINE_integer("epoch_num", 25,
 #                            """Epoch to train [25]""")
 
@@ -79,7 +84,7 @@ def train():
     #gpu
     sess_config = tf.ConfigProto(allow_soft_placement=True)
     sess_config.gpu_options.allow_growth=True
-    sess_config.gpu_options.per_process_gpu_memory_fraction=0.9
+    sess_config.gpu_options.per_process_gpu_memory_fraction=0.99
 
     # Start running operations on the Graph.
     #sess = tf.Session()
@@ -184,13 +189,13 @@ def train():
       #  print("saved to " + TRAIN_DIR)
       
       #epoch
-      if step%(128) == 127:
-        epoch=1+step//128
+      if step%(242) == 281:
+        epoch=1+step//282
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step)
         print("epoch=%d,loss=%s,steps=%d "%(epoch,str(loss_value),step))
         # save
-        if epoch>100:
+        if epoch>50:
             checkpoint_path = os.path.join(TRAIN_DIR, 'model_epoch%d.ckpt'%epoch)
             saver.save(sess, checkpoint_path, global_step=step)
 

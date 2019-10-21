@@ -21,11 +21,11 @@ FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
-tf.app.flags.DEFINE_integer('batch_size', 32,
+tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 100000,
+tf.app.flags.DEFINE_integer('max_steps', 85001,
                             """ max number of steps to train """)
-tf.app.flags.DEFINE_float('keep_prob', 0.69315, #ln2
+tf.app.flags.DEFINE_float('keep_prob', 0.668, #ln2
                             """ keep probability for dropout """)
 tf.app.flags.DEFINE_float('learning_rate', 1e-5,
                             """ keep probability for dropout """)
@@ -79,7 +79,7 @@ def train():
     #gpu
     sess_config = tf.ConfigProto(allow_soft_placement=True)
     sess_config.gpu_options.allow_growth=True
-    sess_config.gpu_options.per_process_gpu_memory_fraction=0.9
+    sess_config.gpu_options.per_process_gpu_memory_fraction=0.99
 
     # Start running operations on the Graph.
     #sess = tf.Session()

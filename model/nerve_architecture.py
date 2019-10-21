@@ -54,6 +54,35 @@ def _variable(name, shape, initializer):
   var = tf.get_variable(name, shape, initializer=initializer)
   return var
 
+
+def batchnorm_layer(inputs,is_training,name='BatchNorm',moving_decay=0.9,eps=1e-5):
+  # 获取输入维度并判断是否匹配卷积层(4)或者全连接层(2)
+  shape = inputs.shape
+  assert len(shape) in [2,4]
+
+  param_shape = shape[-1]
+  with tf.variable_scope(name):
+    # y=gamma*x+beta 
+    gamma = _variable('bn_gamma',param_shape,initializer=tf.constant_initializer(1))
+    beta  = _variable('bn_beta', param_shape,initializer=tf.constant_initializer(0))
+
+    # 计算当前整个batch的均值与方差
+    axes = list(range(len(shape)-1))
+    batch_mean, batch_var = tf.nn.moments(inputs,axes,name='moments')
+
+    # 采用滑动平均更新均值与方差
+    ema = tf.train.ExponentialMovingAverage(moving_decay)
+    
+    def mean_var_with_update():
+        ema_apply_op = ema.apply([batch_mean,batch_var])
+        with tf.control_dependencies([ema_apply_op]):
+            return tf.identity(batch_mean), tf.identity(batch_var)
+    # 训练时，更新均值与方差，测试时使用之前最后一次保存的均值与方差
+    mean, var = tf.cond(tf.equal(is_training,True),mean_var_with_update,
+            lambda:(ema.average(batch_mean),ema.average(batch_var)))
+    # 最后执行batch normalization
+    return tf.nn.batch_normalization(inputs,mean,var,beta,gamma,eps)
+
 def conv_layer(inputs, kernel_size, stride, num_features, idx, nonlinearity=None):
   with tf.variable_scope('{0}_conv'.format(idx)) as scope:
     input_channels = int(inputs.get_shape()[3])
@@ -128,10 +157,16 @@ def PS(X, r, depth):
 
   return X
 
-def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet"):
+def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, stride=1, gated=False, name="resnet", is_train=True):
   orig_x = x
   print(orig_x.get_shape())
-  x_1 = conv_layer(nonlinearity(x), 3, stride, filter_size, name + '_conv_1')
+  # BatchNorm
+  x_1 = batchnorm_layer(x, is_train, name + '_bn_1')
+  # activate
+  x_1 = nonlinearity(x_1)
+  x_1 = conv_layer(x_1, 3, stride, filter_size, name + '_conv_1')
+  # BatchNorm
+  x_1 = batchnorm_layer(x_1, is_train, name + '_bn_2')
   if a is not None:
     shape_a = int_shape(a) 
     shape_x_1 = int_shape(x_1)
@@ -139,9 +174,14 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
       a, [[0, 0], [0, shape_x_1[1]-shape_a[1]], [0, shape_x_1[2]-shape_a[2]],
       [0, 0]])
     x_1 += nin(nonlinearity(a), filter_size, name + '_nin')
+  # BatchNorm
+  #x_1 = batchnorm_layer(x_1, is_train, name + '_bn_2')
+  # activate
   x_1 = nonlinearity(x_1)
+  # Dropout 
   if keep_p < 1.0:
     x_1 = tf.nn.dropout(x_1, keep_prob=keep_p)
+  # Gated
   if not gated:
     x_2 = conv_layer(x_1, 3, 1, filter_size, name + '_conv_2')
   else:
@@ -163,7 +203,7 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
 
   return orig_x + x_2
 
-def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_elu', gated=True):
+def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_elu', gated=True, is_train=True):
   """Builds conv part of net.
   Args:
     inputs: input images
@@ -177,31 +217,31 @@ def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_e
   x = inputs
   print(nr_res_blocks)
   for i in range(nr_res_blocks):
-    x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_1_" + str(i))
+    x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_1_" + str(i))
   # res_2
   a.append(x)
   filter_size = 2 * filter_size
-  x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, name="resnet_2_downsample")
+  x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, is_train=is_train, name="resnet_2_downsample")
   for i in range(nr_res_blocks):
-    x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_2_" + str(i))
+    x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_2_" + str(i))
   # res_3
   a.append(x)
   filter_size = 2 * filter_size
-  x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, name="resnet_3_downsample")
+  x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, is_train=is_train, name="resnet_3_downsample")
   for i in range(nr_res_blocks):
-    x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_3_" + str(i))
+    x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_3_" + str(i))
   # res_4
   a.append(x)
   filter_size = 2 * filter_size
-  x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, name="resnet_4_downsample")
+  x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, is_train=is_train, name="resnet_4_downsample")
   for i in range(nr_res_blocks):
-    x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_4_" + str(i))
+    x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_4_" + str(i))
   # res_4
   a.append(x)
   filter_size = 2 * filter_size
-  x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, name="resnet_5_downsample")
+  x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, stride=2, gated=gated, is_train=is_train, name="resnet_5_downsample")
   for i in range(nr_res_blocks):
-    x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_5_" + str(i))
+    x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_5_" + str(i))
   # res_up_1
   filter_size = filter_size /2
   print(x.get_shape())
@@ -209,9 +249,9 @@ def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_e
   #x = PS(x,2,512)
   for i in range(nr_res_blocks):
     if i == 0:
-      x = res_block(x, a=a[-1], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_1_" + str(i))
+      x = res_block(x, a=a[-1], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_up_1_" + str(i))
     else:
-      x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_1_" + str(i))
+      x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_up_1_" + str(i))
   # res_up_1
   filter_size = filter_size /2
   print(x.get_shape())
@@ -219,9 +259,9 @@ def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_e
   #x = PS(x,2,512)
   for i in range(nr_res_blocks):
     if i == 0:
-      x = res_block(x, a=a[-2], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_2_" + str(i))
+      x = res_block(x, a=a[-2], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_up_2_" + str(i))
     else:
-      x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_2_" + str(i))
+      x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_up_2_" + str(i))
 
   print(x.get_shape())
   filter_size = filter_size /2
@@ -229,9 +269,9 @@ def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_e
   #x = PS(x,2,512)
   for i in range(nr_res_blocks):
     if i == 0:
-      x = res_block(x, a=a[-3], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_3_" + str(i))
+      x = res_block(x, a=a[-3], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_up_3_" + str(i))
     else:
-      x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_3_" + str(i))
+      x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_up_3_" + str(i))
  
   print(x.get_shape())
   filter_size = filter_size /2
@@ -239,9 +279,9 @@ def conv_ced(inputs, nr_res_blocks=1, keep_prob=1.0, nonlinearity_name='concat_e
   #x = PS(x,2,512)
   for i in range(nr_res_blocks):
     if i == 0:
-      x = res_block(x, a=a[-4], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_4_" + str(i))
+      x = res_block(x, a=a[-4], filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_up_4_" + str(i))
     else:
-      x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, name="resnet_up_4_" + str(i))
+      x = res_block(x, filter_size=filter_size, nonlinearity=nonlinearity, keep_p=keep_prob, gated=gated, is_train=is_train, name="resnet_up_4_" + str(i))
   
   x = conv_layer(x, 3, 1, 1, "last_conv")
   x = x[:,6:216,6:296,:]
