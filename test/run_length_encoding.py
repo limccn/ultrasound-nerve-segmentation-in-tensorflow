@@ -27,7 +27,8 @@ def RLenc(img,order='F',format=True):
     # RLeC < 30 Drop
     gt0 = np.where(bytes > 0)[0]
     #print("RlenC=%d",len(gt0))
-    if len(gt0) < 3600:  # 70x70 consider as empty
+    #if len(gt0) < 3600 or len(gt0) > 16000:  # 70x70 consider as empty
+    if len(gt0) < 4400:  # 70x70 consider as empty
         return '' 
 
     r = 0     ## the current run length
@@ -52,6 +53,7 @@ def RLenc(img,order='F',format=True):
         z = ''
     
         for rr in runs:
+            #if rr[1] > 1:   # drop single point 
             z+='{} {} '.format(rr[0],rr[1])
         return z[:-1]
     else:

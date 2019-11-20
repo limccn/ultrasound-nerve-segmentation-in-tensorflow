@@ -33,7 +33,7 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 81223,
+tf.app.flags.DEFINE_integer('max_steps', 80200,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.668,
                             """ keep probability for dropout """)
@@ -98,7 +98,7 @@ def evaluate():
 
     # make csv file
     #csvfile = open('test.csv', 'wb') 
-    csvfile = open('test_m3_k66_bn_elu_3600_81223_g0.csv', 'w') 
+    csvfile = open('test_m3_k66_bn_elu_gt4400_80200.csv', 'w') 
     writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['img', 'pixels'])
 

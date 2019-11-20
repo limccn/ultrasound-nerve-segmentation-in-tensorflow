@@ -192,6 +192,7 @@ def res_block(x, a=None, filter_size=16, nonlinearity=concat_elu, keep_p=1.0, st
   if int(orig_x.get_shape()[2]) > int(x_2.get_shape()[2]):
     assert(int(orig_x.get_shape()[2]) == 2*int(x_2.get_shape()[2]), "res net block only supports stirde 2")
     orig_x = tf.nn.avg_pool(orig_x, [1,2,2,1], [1,2,2,1], padding='SAME')
+    #orig_x = tf.nn.max_pool(orig_x, [1,2,2,1], [1,2,2,1], padding='SAME')
 
   # pad it
   out_filter = filter_size

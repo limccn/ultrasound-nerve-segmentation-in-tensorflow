@@ -13,7 +13,7 @@ import utils.metric as metc
 
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从1开始）
 #os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
 
 
@@ -23,7 +23,7 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 85001,
+tf.app.flags.DEFINE_integer('max_steps', 134200,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.668, #ln2
                             """ keep probability for dropout """)
@@ -183,6 +183,8 @@ def train():
       #  saver.save(sess, checkpoint_path, global_step=step)  
       #  print("saved to " + TRAIN_DIR)
       
+      #1144
+      #472
       #epoch
       if step%(1144) == 1143:
         epoch=1+step//1144

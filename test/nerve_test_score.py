@@ -34,9 +34,9 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 50000,
+tf.app.flags.DEFINE_integer('max_steps', 21000,
                             """ max number of steps to train """)
-tf.app.flags.DEFINE_float('keep_prob', 0.69315,
+tf.app.flags.DEFINE_float('keep_prob', 0.668,
                             """ keep probability for dropout """)
 tf.app.flags.DEFINE_float('learning_rate', 1e-5,
                             """ keep probability for dropout """)
@@ -135,6 +135,19 @@ def metric_min_area_rect_circle(prediction, mask):
     break
   return [x,y,w,h,r]
 
+
+def find_contours(img):
+  img = np.uint8(img*255.)
+  img_canny = cv2.Canny(img, 100, 300)
+  ret, thresh = cv2.threshold(img_canny, 127, 255, cv2.THRESH_BINARY)
+  img_canny = thresh
+
+  # binary是最后返回的二值图像
+  #findContours()第一个参数是源图像、第二个参数是轮廓检索模式，第三个参数是轮廓逼近方法
+  #输出是轮廓和层次结构，轮廓是图像中所有轮廓的python列表，每个单独的轮廓是对象边界点的(x,y)坐标的Numpy数组
+  binary, contours, hierarchy = cv2.findContours(img_canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+  return contours
+
 def evaluate():
   """Run Eval once.
 
@@ -150,8 +163,8 @@ def evaluate():
   #filenames.sort(key=alphanum_key)
   #num_files = len(filename)
 
-  test_filename = [s for s in filenames if "truth" not in s]
-  truth_filename = [s for s in filenames if "truth" in s]
+  test_filename = [s for s in filenames if "mask" not in s]
+  truth_filename = [s for s in filenames if "mask" in s]
 
   test_filename.sort(key=alphanum_key)
   truth_filename.sort(key=alphanum_key)
@@ -160,7 +173,7 @@ def evaluate():
 
   for image in test_filename:
     key = image[:-4]
-    truth = [s for s in truth_filename if key+'_truth' in s][0] 
+    truth = [s for s in truth_filename if key+'_mask' in s][0] 
     pair_filename.append((image, truth))
   
   #print(pair_filename)
@@ -280,17 +293,24 @@ def evaluate():
       save_prediction_path = '../data/prediction_save/'
       filepath_pred = "%s%s.pred.%s"%(save_prediction_path,name,f[-3:])
       filepath_mask = "%s%s.pred.mask.%s"%(save_prediction_path,name,f[-3:])
-      filepath_overlap = "%s%s.overlap.mask.%s"%(save_prediction_path,name,f[-3:])
+      #filepath_overlap = "%s%s.overlap.mask.%s"%(save_prediction_path,name,f[-3:])
+      filepath_overlap = "%s%s.overlap.mask.%s"%(save_prediction_path,name,'png')
       
       x = int(overlay_param[0])
       y = int(overlay_param[1])
+      #r = 30 # 20px
       r = int(overlay_param[4])
       overlap = img_origin.copy()
+      contours = find_contours(ground_truth_mask)
+      #overlay
+      overlap = cv2.drawContours(overlap, contours, -1, (255, 0 , 0), 1)
+
+      #if r > 10 :
       
-      if r > 10 :
-        cv2.circle(overlap, (x,y), r, (0, 0, 255), 1)
-        cv2.line(overlap, (x-r,y),(x+r,y), (0, 0, 255), 1)
-        cv2.line(overlap, (x,y-r),(x,y+r), (0, 0, 255), 1)
+      cv2.circle(overlap, (x,y), r, (0, 0, 255), 1)
+      cv2.circle(overlap, (x,y), 30, (0, 255, 0), 1) 
+      cv2.line(overlap, (x-r,y),(x+r,y), (0, 0, 255), 1)
+      cv2.line(overlap, (x,y-r),(x,y+r), (0, 0, 255), 1)
 
       # convert to display 
       #generated_mask = np.uint8(generated_mask * 255)

@@ -46,9 +46,50 @@ def inference(inputs, keep_prob):
   if FLAGS.model == "ced": 
     prediction = model.nerve_architecture.conv_ced(inputs, nr_res_blocks=FLAGS.nr_res_blocks, keep_prob=keep_prob, nonlinearity_name=FLAGS.nonlinearity, gated=FLAGS.gated_res, is_train=True)
 
-  return prediction 
+    #prediction_sigmod = tf.sigmoid(prediction)
+    #tf.summary.image('predicted', prediction_sigmod)
 
-def loss_image(prediction, mask):
+    return prediction
+
+
+def cross_entropy_loss(prediction, mask):
+  print("d",prediction.get_shape())
+  print("l",mask.get_shape())
+
+  #y = mask
+  #y_pred = prediction
+  #bce_loss=-y * (np.log(y_pred)) - (1 - y) * np.log(1 - y_pred)
+  #bce_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=mask, logits=prediction)
+  #bce_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=mask, logits=prediction)
+  #bce_loss = prediction*tf.log(tf.clip_by_value(,1e-10,1.0)))
+  
+  #y = prediction
+  #y = tf.reshape(prediction, [-1, 1])
+  #y_ = mask
+  #y_ = tf.reshape(mask, [-1, 1])
+
+  #print("dy",y.get_shape())
+  #print("ly",y_.get_shape())
+
+  #y=tf.nn.softmax(y)
+  #bce_loss1 = -y_ * tf.log(y) - (1 - y_) * tf.log(1 - y)
+
+  bce_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=mask, logits=prediction)
+  
+  #loss = tf.reduce_mean(bce_loss)  
+  #bce  = tf.reduce_sum(bce_loss)  
+  #print("loss%s"%loss)
+
+  #tf.summary.scalar('sum_y', tf.reduce_sum(y))
+  #tf.summary.scalar('sum_y_', tf.reduce_sum(y_))
+  #tf.summary.scalar('bce1', tf.reduce_sum(bce_loss1))
+  tf.summary.scalar('bce', tf.reduce_sum(bce_loss))
+  #tf.summary.scalar('bce_loss1', tf.reduce_mean(bce_loss1))
+  tf.summary.scalar('bce_loss', tf.reduce_mean(bce_loss))
+  
+  return tf.reduce_mean(bce_loss)
+
+def dice_loss(prediction, mask):
   """Calc loss for predition on image of mask.
   Args.
     inputs: prediction image 
@@ -63,9 +104,18 @@ def loss_image(prediction, mask):
   #prediction = tf.flatten(prediction)
   intersection = tf.reduce_sum(prediction * mask)
   loss = -(2. * intersection + 1.) / (tf.reduce_sum(mask) + tf.reduce_sum(prediction) + 1.)
-  tf.summary.scalar('loss', loss)
+  tf.summary.scalar('soft_dice_loss', loss)
 
   return loss
+
+def loss_image(prediction, mask):
+  #bce = cross_entropy_loss(prediction, mask)
+  dice = dice_loss(prediction, mask)
+  #bce_dice = (bce+dice)/2.0
+  
+  #tf.summary.scalar('bce_dice', bce_dice)
+
+  return dice
 
 def metric_image(prediction, mask):
   #mask = tf.flatten(mask)
@@ -88,41 +138,41 @@ def metric_image(prediction, mask):
   fp = tf.reduce_sum(prediction * (1-mask))
   fn = tf.reduce_sum((1-prediction) * mask)
 
-  jaccard = (tp + 1.) / (tp + fn + fp + 1.)
+  jaccard = (tp + 0.0001) / (tp + fn + fp + 0.0001)
   tf.summary.scalar('IoU Socre=Jaccard Coff', jaccard)
 
-  f1_score = (2. * tp + 1.)/(2. * tp + fn + fp + 1.)
+  f1_score = (2. * tp + 0.0001)/(2. * tp + fn + fp + 0.0001)
   tf.summary.scalar('F1 Score=Dice Coff', f1_score)
 
-  f2_score = (5. * tp + 1.)/(5. * tp + 4. * fn + fp + 1.)
+  f2_score = (5. * tp + 0.0001)/(5. * tp + 4. * fn + fp + 0.0001)
   tf.summary.scalar('F2 Score', f2_score)
 
-  sensitivity = (tp + 1.) / (tp + fn + 1.)
+  sensitivity = (tp + 0.0001) / (tp + fn + 0.0001)
   tf.summary.scalar('Recall=Sensitivity=TPR', sensitivity)
 
-  fpr = (fp + 1.) / (fp + tn + 1.)
+  fpr = (fp + 0.0001) / (fp + tn + 0.0001)
   tf.summary.scalar('FPR', fpr)
 
-  specificity = (tn + 1.) / (fp + tn + 1.)
+  specificity = (tn + 0.0001) / (fp + tn + 0.0001)
   tf.summary.scalar('Specificity=TNR', specificity)
   
-  fnr =  (fn + 1.) / (tp + fn + 1.)
+  fnr = (fn + 0.0001) / (tp + fn + 0.0001)
   tf.summary.scalar('FNR', fnr)
 
-  precision = (tp + 1.) / (tp + fp + 1.)
+  precision = (tp + 0.0001) / (tp + fp + 0.0001)
   tf.summary.scalar('Precision', precision)
 
-  accuracy = (tp + tn + 1.) / (tp + tn + fp + fn + 1.)
+  accuracy = (tp + tn + 0.0001) / (tp + tn + fp + fn + 0.0001)
   tf.summary.scalar('Accuracy', accuracy)
   #recall = (tp + 1.) / (tp + fn + 1.)
   #tf.summary.scalar('Recall', recall)
 
   #Precision
-  pixel_precision = (intersection + 1.) / (tf.reduce_sum(prediction) + 1.)
+  pixel_precision = (intersection + 0.0001) / (tf.reduce_sum(prediction) + 0.0001)
   tf.summary.scalar('Pixel Precision', pixel_precision)
 
   #Recall
-  pixel_recall= (intersection + 1.) / (tf.reduce_sum(mask) + 1.)
+  pixel_recall= (intersection + 0.0001) / (tf.reduce_sum(mask) + 0.0001)
   tf.summary.scalar('Pixel Recall', pixel_recall)
   
   #BACC
