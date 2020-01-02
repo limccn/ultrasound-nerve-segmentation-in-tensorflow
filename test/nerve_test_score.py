@@ -34,7 +34,7 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 21000,
+tf.app.flags.DEFINE_integer('max_steps', 63790,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.668,
                             """ keep probability for dropout """)
@@ -93,6 +93,52 @@ def metric_image_distance(prediction, mask):
   assd = metc.assd(prediction,mask)
   hd = metc.hd(prediction,mask)
   return [asd,msd,assd,hd]
+
+
+
+
+def metric_img_mar_circle(image):
+  if 0 == np.count_nonzero(image): 
+    return [0,0,0,0,0]
+
+  #图像相交
+  image = np.uint8(image * 255)
+
+  img_canny = cv2.Canny(image, 100, 300)
+  ret, thresh = cv2.threshold(img_canny, 127, 255, cv2.THRESH_BINARY)
+  img_canny = thresh
+
+  # binary是最后返回的二值图像
+  #findContours()第一个参数是源图像、第二个参数是轮廓检索模式，第三个参数是轮廓逼近方法
+  #输出是轮廓和层次结构，轮廓是图像中所有轮廓的python列表，每个单独的轮廓是对象边界点的(x,y)坐标的Numpy数组
+  binary, contours, hierarchy = cv2.findContours(img_canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+  #加粗
+  img_canny = cv2.drawContours(img_canny, contours, -1, (255,255,255), 4)
+  binary, contours, hierarchy = cv2.findContours(img_canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+  x=0
+  y=0
+  w=0
+  h=0
+  r=0
+  d=0
+  for c in contours:
+    if cv2.contourArea(c) < 10:
+        continue
+    #x, y, w, h = cv2.boundingRect(c)
+    #cv2.rectangle(img_ori, (x,y), (x+w,y+h), (0,255,0), 1)
+    box = cv2.minAreaRect(c)
+    t_w, t_h = box[1]
+    t_d = t_w if t_w < t_h else t_h
+    # get
+    if t_d > d: 
+      x, y = box[0]
+      w, h = box[1]
+      d = w if w < h else h
+      r = int(d/2)
+      # find first only
+    
+  return [x,y,w,h,r]
 
 
 def metric_min_area_rect_circle(prediction, mask):
@@ -212,9 +258,9 @@ def evaluate():
 
     # make csv file
     #csvfile = open('test.csv', 'wb') 
-    csvfile = open('test_huashan.score.csv', 'w') 
+    csvfile = open('test_huashan_new_sample_63790.csv', 'w') 
     writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(['img','truth','tp','tn','fp','fn','tpr','tnr','fpr','fnr','acc','prec','loss','dice','jaccard','f1','f2','bacc','asd','msd','assd','hd','center_x','center_y','rect_w','rect_h','radius'])
+    writer.writerow(['img','truth','tp','tn','fp','fn','tpr','tnr','fpr','fnr','acc','prec','loss','dice','jaccard','f1','f2','bacc','asd','msd','assd','hd','center_x','center_y','rect_w','rect_h','radius','pred_center_x','pred_center_y','pred_rect_w','pred_rect_h','pred_radius','gt_center_x','gt_center_y','gt_rect_w','gt_rect_h','gt_radius','center_dis','and_offset','offset_ratio'])
 
     for (f,t) in pair_filename:
       # name to save 
@@ -267,6 +313,33 @@ def evaluate():
       print(overlay_param)
       row.extend(overlay_param)
 
+      overlay_param_pred = metric_img_mar_circle(generated_mask)
+      overlay_param_gt = metric_img_mar_circle(ground_truth_mask)
+      
+      row.extend(overlay_param_pred)
+      row.extend(overlay_param_gt)
+
+
+      x = int(overlay_param[0])
+      y = int(overlay_param[1])
+      #r = 30 # 20px
+      r = int(overlay_param[4])
+
+      x1 = int(overlay_param_pred[0])
+      y1 = int(overlay_param_pred[1])
+      r1 = int(overlay_param_pred[4])
+
+      x2 = int(overlay_param_gt[0])
+      y2 = int(overlay_param_gt[1])
+      r2 = int(overlay_param_gt[4])      
+     
+      # distance
+      center_dis = math.sqrt(((x1-x2)**2)+((y1-y2)**2))+0.00001
+      and_offset = center_dis - 2 * r
+      offset_ratio = and_offset / center_dis
+
+      row.extend([center_dis,and_offset,offset_ratio])
+ 
       writer.writerow(row)
 
       #run_length_encoding = RLenc(generated_mask)
@@ -290,27 +363,48 @@ def evaluate():
       '''
     
       
-      save_prediction_path = '../data/prediction_save/'
+      save_prediction_path = '../data/prediction_save_new_sample_63790/'
       filepath_pred = "%s%s.pred.%s"%(save_prediction_path,name,f[-3:])
       filepath_mask = "%s%s.pred.mask.%s"%(save_prediction_path,name,f[-3:])
       #filepath_overlap = "%s%s.overlap.mask.%s"%(save_prediction_path,name,f[-3:])
       filepath_overlap = "%s%s.overlap.mask.%s"%(save_prediction_path,name,'png')
       
-      x = int(overlay_param[0])
-      y = int(overlay_param[1])
-      #r = 30 # 20px
-      r = int(overlay_param[4])
       overlap = img_origin.copy()
       contours = find_contours(ground_truth_mask)
       #overlay
       overlap = cv2.drawContours(overlap, contours, -1, (255, 0 , 0), 1)
 
+      contours = find_contours(generated_mask)
+      #overlay
+      overlap = cv2.drawContours(overlap, contours, -1, (0, 255 , 0), 1)
+
       #if r > 10 :
+      if x > 0 and y > 0:
+        cv2.circle(overlap, (x,y), r, (0, 0, 255), 1)
+        #cv2.circle(overlap, (x,y), 30, (0, 0, 224), 1) 
+        #cv2.line(overlap, (x-r,y),(x+r,y), (0, 0, 255), 1)
+        #cv2.line(overlap, (x,y-r),(x,y+r), (0, 0, 255), 1)
+
+
+      #overlay_param_pred = metric_img_mar_circle(generated_mask)
+      #overlay_param_gt = metric_img_mar_circle(ground_truth_mask)
       
-      cv2.circle(overlap, (x,y), r, (0, 0, 255), 1)
-      cv2.circle(overlap, (x,y), 30, (0, 255, 0), 1) 
-      cv2.line(overlap, (x-r,y),(x+r,y), (0, 0, 255), 1)
-      cv2.line(overlap, (x,y-r),(x,y+r), (0, 0, 255), 1)
+      if x1 > 0 and y1 > 0:
+        cv2.circle(overlap, (x1,y1), r1, (0, 255, 0), 1)
+        #cv2.circle(overlap, (x1,y1), 30, (0, 224, 0), 1)
+        #cv2.line(overlap, (x1-r1,y1),(x1+r1,y1), (0, 0, 255), 1)
+        #cv2.line(overlap, (x,y-r),(x,y+r), (0, 0, 255), 1)
+
+      if x2 > 0 and y2 > 0:
+        cv2.circle(overlap, (x2,y2), r2, (255, 0, 0), 1)
+        #cv2.circle(overlap, (x2,y2), 30, (224, 0, 0), 1)
+        #cv2.line(overlap, (x2-r2,y2),(x2+r2,y2), (0, 0, 255), 1)
+        #cv2.line(overlap, (x2,y2-r2),(x2,y2+r2), (0, 0, 255), 1)
+      
+      # connect center
+      if x1 > 0 and y1 > 0 and x2 > 0 and y2 > 0:
+        cv2.line(overlap, (x1,y1),(x2,y2), (0, 0, 255), 1)
+      
 
       # convert to display 
       #generated_mask = np.uint8(generated_mask * 255)

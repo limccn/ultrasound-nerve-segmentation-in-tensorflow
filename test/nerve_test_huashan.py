@@ -35,7 +35,7 @@ tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
 tf.app.flags.DEFINE_integer('max_steps', 21000,
                             """ max number of steps to train """)
-tf.app.flags.DEFINE_float('keep_prob', 0.69315,
+tf.app.flags.DEFINE_float('keep_prob', 0.668,
                             """ keep probability for dropout """)
 tf.app.flags.DEFINE_float('learning_rate', 1e-5,
                             """ keep probability for dropout """)
@@ -63,7 +63,7 @@ def evaluate():
     summary_op: Summary op.
   """
   # get a list of image filenames
-  filenames = glb('../data/test/*')
+  filenames = glb('../data/test_huashan/*')
   # sort the file names but this is probably not ness
   filenames.sort(key=alphanum_key)
   #num_files = len(filename)

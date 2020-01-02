@@ -23,7 +23,7 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 134200,
+tf.app.flags.DEFINE_integer('max_steps', 138150,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.668, #ln2
                             """ keep probability for dropout """)
@@ -186,13 +186,13 @@ def train():
       #1144
       #472
       #epoch
-      if step%(1144) == 1143:
-        epoch=1+step//1144
+      if step%(1341) == 1340:
+        epoch=1+step//1341
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step)
         print("epoch=%d,loss=%s,steps=%d "%(epoch,str(loss_value),step))
         # save
-        if epoch>50:
+        if epoch>80:
             checkpoint_path = os.path.join(TRAIN_DIR, 'model_epoch%d.ckpt'%epoch)
             saver.save(sess, checkpoint_path, global_step=step)
 

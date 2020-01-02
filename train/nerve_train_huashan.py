@@ -13,8 +13,8 @@ import utils.metric as metc
 
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
-#os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
+#os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -23,7 +23,7 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 20003,
+tf.app.flags.DEFINE_integer('max_steps', 63790,
                             """ max number of steps to train """)
 #tf.app.flags.DEFINE_float('keep_prob', 0.69315, #ln2
 tf.app.flags.DEFINE_float('keep_prob', 0.668, # gd
@@ -189,8 +189,8 @@ def train():
       #  print("saved to " + TRAIN_DIR)
       
       #epoch
-      if step%(242) == 241:
-        epoch=1+step//242
+      if step%(619) == 618:
+        epoch=1+step//619
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step)
         print("epoch=%d,loss=%s,steps=%d "%(epoch,str(loss_value),step))

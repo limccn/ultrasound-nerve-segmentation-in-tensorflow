@@ -28,7 +28,7 @@ def RLenc(img,order='F',format=True):
     gt0 = np.where(bytes > 0)[0]
     #print("RlenC=%d",len(gt0))
     #if len(gt0) < 3600 or len(gt0) > 16000:  # 70x70 consider as empty
-    if len(gt0) < 4400:  # 70x70 consider as empty
+    if len(gt0) < 3600:  # 70x70 consider as empty
         return '' 
 
     r = 0     ## the current run length

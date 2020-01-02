@@ -44,7 +44,7 @@ def inference(inputs, keep_prob):
     keep_prob: dropout layer
   """
   if FLAGS.model == "ced": 
-    prediction = model.nerve_architecture.conv_ced(inputs, nr_res_blocks=FLAGS.nr_res_blocks, keep_prob=keep_prob, nonlinearity_name=FLAGS.nonlinearity, gated=FLAGS.gated_res, is_train=True)
+    prediction = model.nerve_architecture.conv_ced(inputs, nr_res_blocks=FLAGS.nr_res_blocks, keep_prob=keep_prob, nonlinearity_name=FLAGS.nonlinearity, gated=FLAGS.gated_res, is_train=False)
 
     #prediction_sigmod = tf.sigmoid(prediction)
     #tf.summary.image('predicted', prediction_sigmod)

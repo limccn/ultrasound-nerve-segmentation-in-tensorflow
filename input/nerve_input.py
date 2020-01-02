@@ -80,7 +80,9 @@ def nerve_inputs(batch_size):
 
   shape = (210,290)
 
-  tfrecord_filename = glb('../data/tfrecords/train_sim_rein3.tfrecords') 
+  #tfrecord_filename = glb('../data/tfrecords/train_huashan.tfrecords') 
+  #tfrecord_filename = glb('../data/tfrecords/train_sim_rein3.tfrecords') 
+  tfrecord_filename = glb('../data/tfrecords/train_combine.tfrecords') 
   print(tfrecord_filename)
   
   filename_queue = tf.train.string_input_producer(tfrecord_filename) 
