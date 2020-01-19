@@ -24,8 +24,8 @@ import utils.metric as metc
 
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
-#os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
+#os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -34,7 +34,7 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 63790,
+tf.app.flags.DEFINE_integer('max_steps', 227980,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.668,
                             """ keep probability for dropout """)
@@ -258,7 +258,7 @@ def evaluate():
 
     # make csv file
     #csvfile = open('test.csv', 'wb') 
-    csvfile = open('test_huashan_new_sample_63790.csv', 'w') 
+    csvfile = open('test_huashan_new_sample_227980.csv', 'w') 
     writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['img','truth','tp','tn','fp','fn','tpr','tnr','fpr','fnr','acc','prec','loss','dice','jaccard','f1','f2','bacc','asd','msd','assd','hd','center_x','center_y','rect_w','rect_h','radius','pred_center_x','pred_center_y','pred_rect_w','pred_rect_h','pred_radius','gt_center_x','gt_center_y','gt_rect_w','gt_rect_h','gt_radius','center_dis','and_offset','offset_ratio'])
 
@@ -363,7 +363,7 @@ def evaluate():
       '''
     
       
-      save_prediction_path = '../data/prediction_save_new_sample_63790/'
+      save_prediction_path = '../data/prediction_save_new_sample_227980/'
       filepath_pred = "%s%s.pred.%s"%(save_prediction_path,name,f[-3:])
       filepath_mask = "%s%s.pred.mask.%s"%(save_prediction_path,name,f[-3:])
       #filepath_overlap = "%s%s.overlap.mask.%s"%(save_prediction_path,name,f[-3:])

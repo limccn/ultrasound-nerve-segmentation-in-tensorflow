@@ -33,7 +33,7 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 138150,
+tf.app.flags.DEFINE_integer('max_steps', 190138,
                             """ max number of steps to train """)
 tf.app.flags.DEFINE_float('keep_prob', 0.668,
                             """ keep probability for dropout """)
