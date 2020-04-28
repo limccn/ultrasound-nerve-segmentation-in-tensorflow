@@ -1,0 +1,74 @@
+FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
+MAINTAINER Limc <limc@limc.com.cn>
+
+#close frontend
+ENV DEBIAN_FRONTEND noninteractive
+
+# add cuda user
+# --disabled-password = Don't assign a password
+# using root group for OpenShift compatibility
+ENV CUDA_USER_NAME=cuda10
+ENV CUDA_USER_GROUP=root
+
+# add user
+RUN adduser --system --group --disabled-password --no-create-home --disabled-login $CUDA_USER_NAME
+RUN adduser $CUDA_USER_NAME $CUDA_USER_GROUP
+
+# Install basic dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        git \
+        wget \
+        libopencv-dev \
+        libsnappy-dev \
+        python-dev \
+        python-pip \
+        #tzdata \
+        vim
+
+# Install conda for python
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
+    rm ~/miniconda.sh
+
+# Set locale
+ENV LANG C.UTF-8 LC_ALL=C.UTF-8
+
+ENV PATH /opt/conda/bin:$PATH
+
+RUN ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh  && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc && \
+    find /opt/conda/ -follow -type f -name '*.a' -delete && \
+    find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
+    /opt/conda/bin/conda clean -afy
+
+
+# copy entrypoint.sh
+#COPY ./entrypoint.sh /entrypoint.sh
+# install 
+#ENTRYPOINT ["/entrypoint.sh"]
+
+# Initialize workspace
+COPY ./app /app
+# make workdir
+WORKDIR /app
+
+# update pip if nesseary
+#RUN pip install --upgrade --no-cache-dir pip
+# install gunicorn
+# RUN pip install --no-cache-dir -r ./requirements.txt
+
+# install use conda
+#RUN conda install --yes --file ./requirements.txt
+RUN while read requirement; do conda install --yes $requirement; done < requirements.txt
+
+
+# copy entrypoint.sh
+COPY ./entrypoint.sh /entrypoint.sh
+# install 
+ENTRYPOINT ["/entrypoint.sh"]
+
+# switch to non-root user
+USER $CUDA_USER_NAME
