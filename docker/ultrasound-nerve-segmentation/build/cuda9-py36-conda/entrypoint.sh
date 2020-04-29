@@ -12,7 +12,7 @@ fi
 if [ "$1" = 'python' -a "$(id -u)" = '0' ]; then
     # Change the ownership of user-mutable directories to gunicorn
     for path in \
-        /app \
+        /app/ \
         /usr/local/cuda/ \
     ; do
         chown -R cuda9:root "$path"

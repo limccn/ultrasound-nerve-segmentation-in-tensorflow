@@ -61,8 +61,8 @@ WORKDIR /app
 # RUN pip install --no-cache-dir -r ./requirements.txt
 
 # install use conda
-RUN conda install --yes --file ./requirements.txt --channel conda-forge
-#RUN while read requirement; do conda install --yes $requirement; done < requirements.txt
+#RUN conda install --yes --file ./requirements.txt
+RUN while read requirement; do conda install --yes $requirement; done < requirements.txt
 
 
 # copy entrypoint.sh
@@ -70,16 +70,5 @@ COPY ./entrypoint.sh /entrypoint.sh
 # install 
 ENTRYPOINT ["/entrypoint.sh"]
 
-ENV LANG C.UTF-8 
-ENV LC_ALL C.UTF-8
-
-# develop
-ENV DEVEL_USER_NAME=devel
-ENV DEVEL_USER_GROUP=root
-
-# add devel
-RUN adduser --system --group --disabled-password --disabled-login $DEVEL_USER_NAME
-RUN adduser $DEVEL_USER_NAME $DEVEL_USER_GROUP
-
 # switch to non-root user
-USER $DEVEL_USER_NAME
+USER $CUDA_USER_NAME
