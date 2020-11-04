@@ -13,8 +13,8 @@ import utils.metric as metc
 
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-#os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"       # 使用第二块GPU（从0开始）
+#os.environ["CUDA_VISIBLE_DEVICES"] = "1"       # 使用第二块GPU（从0开始）
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -23,7 +23,7 @@ tf.app.flags.DEFINE_string('base_dir', '../checkpoints',
                             """dir to store trained net """)
 tf.app.flags.DEFINE_integer('batch_size', 64,
                             """ training batch size """)
-tf.app.flags.DEFINE_integer('max_steps', 227980,
+tf.app.flags.DEFINE_integer('max_steps', 238890,
                             """ max number of steps to train """)
 #tf.app.flags.DEFINE_float('keep_prob', 0.69315, #ln2
 tf.app.flags.DEFINE_float('keep_prob', 0.668, # gd
@@ -40,6 +40,17 @@ tf.app.flags.DEFINE_float('learning_rate', 1e-5,
 #file_count:5635
 #record_count:73255
 
+#767790 train at 2020-08-05
+#file_count:9000
+#record_count:477000
+
+#1028660 train at 2020-08-12
+#file_count:9000
+#record_count:477000
+
+#1144490 train at 2020-09-03
+#file_count:10013
+#record_count:530689
 
 TRAIN_DIR = make_checkpoint_path(FLAGS.base_dir, FLAGS)
 print(TRAIN_DIR)
@@ -109,7 +120,7 @@ def train():
 
       assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
         
-      if step%32 == 0:
+      if step%64 == 0:
         # meric distance
         np_predictions = prediction.eval(session=sess)
         np_masks= mask.eval(session=sess)
@@ -162,7 +173,7 @@ def train():
         #tf.summary.scalar('ASD', asd)
         #tf.summary.scalar('MSD', msd)
 
-      if step%32 == 0:
+      if step%64 == 0:
         metric_list = sess.run([metric],feed_dict={})
         if metric_list and len(metric_list) > 0:
             metric_matrix = metric_list[0]
@@ -177,7 +188,7 @@ def train():
 
       #if step%100 == 0:
          
-      if step%32 == 0:
+      if step%64 == 0:
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step)
         print("loss value at " + str(loss_value))
@@ -189,13 +200,13 @@ def train():
       #  print("saved to " + TRAIN_DIR)
       
       #epoch
-      if step%(2213) == 2212:
-        epoch=1+step//2213
+      if step%(2319) == 2318:
+        epoch=1+step//2319
         summary_str = sess.run(summary_op, feed_dict={})
         summary_writer.add_summary(summary_str, step)
         print("epoch=%d,loss=%s,steps=%d "%(epoch,str(loss_value),step))
         # save
-        if epoch>50:
+        if epoch>80:
             checkpoint_path = os.path.join(TRAIN_DIR, 'model_epoch%d.ckpt'%epoch)
             saver.save(sess, checkpoint_path, global_step=step)
 

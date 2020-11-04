@@ -59,7 +59,7 @@ shape = (cols, rows)
 frames = np.zeros((shape[0], shape[1], 1))
 
 # list of files
-train_filename = glb('../data/dataset/kaggle_2800_train/*') 
+train_filename = glb('../data/train/train_huashan/*') 
 mask_filename = [s for s in train_filename if "mask" in s]
 image_filename = [s for s in train_filename if "mask" not in s]
 
@@ -67,12 +67,8 @@ pair_filename = []
 
 for image in image_filename:
   key = image[:-4] 
-  mask_arr = [s for s in mask_filename if key+'_mask' in s] #might some bug happens
-  if len(mask_arr) > 0:
-    mask = mask_arr[0]
-    pair_filename.append((image, mask))
-  else:
-    print(key)
+  mask = [s for s in mask_filename if key+'_mask' in s][0] #might some bug happens
+  pair_filename.append((image, mask))
 
 print ("file_count:%d"%len(pair_filename))
 
